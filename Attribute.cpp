@@ -1,24 +1,59 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-no-recursion"
 //
 // Created by charlie.thomson on 10/19/2022.
 
 
 #include "Attribute.h"
 
-attribute_t make_attribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+#include <utility>
+
+template<typename T>
+T read_vec_un(std::vector<u1> bytes, size_t &cursor, size_t n) {
+    T v=0;
+    for (auto i = 0; i < n; ++i) {
+        v <<= 8;
+        v |= bytes.at((cursor) + i);
+    }
+    cursor += n;
+    return v;
+}
+#define o(T,N) static T read_vec_##T(std::vector<u1> bytes, size_t &cursor) { \
+    return read_vec_un<T>(std::move(bytes), cursor, N);                                  \
+}
+o(u1, 1)
+o(u2, 2)
+o(u4, 4)
+#undef o
+
+attribute_t make_attribute(std::string name, const std::vector<u1>& bytes, std::vector<ConstantInfo> &constantsPool) {
 #define o(A) if (is##A##Attribute(name)) return make##A##Attribute(name, bytes, constantsPool);
     o(ConstantValue)
     o(Code)
-    o(LineNumberTable)
     o(StackMapTable)
+    o(Exceptions)
+    o(InnerClasses)
+    o(EnclosingMethod)
+    o(Synthetic)
+    o(Signature)
     o(SourceFile)
+    o(SourceDebugExtension)
+    o(LineNumberTable)
+    o(LocalVariableTable)
+    o(LocalVariableTypeTable)
     o(Deprecated)
     o(RuntimeVisibleAnnotations)
+    o(RuntimeInvisibleAnnotations)
+    o(RuntimeVisibleParameterAnnotations)
+    o(RuntimeInvisibleParameterAnnotations)
+    o(AnnotationDefault)
+    o(BootstrapMethods)
 #undef o
     std::cerr << "No handler configured for attr of type " << name << std::endl;
     throw std::exception();
 }
 
-attribute_t makeConstantValueAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+attribute_t makeConstantValueAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     size_t cursor = 0;
     auto constantValueIndex = read_vec_u2(bytes, cursor);
     auto constant = constantsPool.at(constantValueIndex - 1);
@@ -50,7 +85,7 @@ attribute_t makeConstantValueAttribute(std::string name, std::vector<u1> bytes, 
     throw std::exception();
 }
 
-attribute_t makeCodeAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+attribute_t makeCodeAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     size_t cursor = 0;
 #define r_u4(N) auto N = read_vec_u4(bytes, cursor);
 #define r_u2(N) auto N = read_vec_u2(bytes, cursor);
@@ -88,10 +123,10 @@ attribute_t makeCodeAttribute(std::string name, std::vector<u1> bytes, std::vect
 
 #undef r_u4
 #undef r_u2
-    return CodeAttribute(std::move(name), maxStack, maxLocals, code, exceptionTable, attributes);
+    return CodeAttribute(name, maxStack, maxLocals, code, exceptionTable, attributes);
 }
 
-verification_type_info_t readVerificationType(std::vector<u1> bytes, size_t &cursor, std::vector<ConstantInfo> &constantsPool) {
+verification_type_info_t readVerificationType(const std::vector<u1> &bytes, size_t &cursor, std::vector<ConstantInfo> &constantsPool) {
     auto tag = read_vec_u1(bytes, cursor);
     if (tag == VerificationTypeInfoTop::Tag()) return VerificationTypeInfoTop();
     if (tag == VerificationTypeInfoInteger::Tag()) return VerificationTypeInfoInteger();
@@ -115,7 +150,7 @@ verification_type_info_t readVerificationType(std::vector<u1> bytes, size_t &cur
     throw std::exception();
 }
 
-attribute_t makeStackMapTableAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+attribute_t makeStackMapTableAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     size_t cursor = 0;
 
 #define r_u2(N) auto N = read_vec_u2(bytes, cursor);
@@ -170,27 +205,27 @@ attribute_t makeStackMapTableAttribute(std::string name, std::vector<u1> bytes, 
 #undef r_u1
 }
 
-// attribute_t makeExceptionsAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeExceptionsAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeInnerClassesAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeInnerClassesAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeEnclosingMethodAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeEnclosingMethodAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeSyntheticAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeSyntheticAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeSignatureAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeSignatureAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
- attribute_t makeSourceFileAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+attribute_t makeSourceFileAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     size_t cursor = 0;
     auto sourceFileIndex = read_vec_u2(bytes, cursor);
     auto sourceFileName = std::string(constantsPool.at(sourceFileIndex - 1).expectUtf8Info().bytes);
@@ -198,11 +233,11 @@ attribute_t makeStackMapTableAttribute(std::string name, std::vector<u1> bytes, 
     return SourceFileAttribute(name, sourceFileName);
 }
 
-// attribute_t makeSourceDebugExtensionAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeSourceDebugExtensionAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
- attribute_t makeLineNumberTableAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+attribute_t makeLineNumberTableAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     size_t cursor = 0;
     auto tableLength = read_vec_u2(bytes, cursor);
     std::vector<LineNumberEntry> table;
@@ -215,23 +250,45 @@ attribute_t makeStackMapTableAttribute(std::string name, std::vector<u1> bytes, 
     return LineNumberTableAttribute(name, table);
  }
 
-// attribute_t makeLocalVariableTableAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeLocalVariableTableAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeLocalVariableTypeTableAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeLocalVariableTypeTableAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
- attribute_t makeDeprecatedAttribute(std::string name, std::vector<u1> _bytes, std::vector<ConstantInfo> &_constantsPool) {
+attribute_t makeDeprecatedAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     return DeprecatedAttribute(name);
 }
 
-runtime_annotation_value_t readElementValue(std::vector<u1> bytes, size_t &cursor, std::vector<ConstantInfo> &constantsPool) {
+runtime_annotation_value_t readElementValue(const std::vector<u1>& bytes, size_t &cursor, std::vector<ConstantInfo> &constantsPool) {
     auto tag = read_vec_u1(bytes, cursor);
-    if (std::string("BCDFIJSZs").find(tag) != std::string::npos) {
+    if (std::string("BCDFIJSZs").find(static_cast<char>(tag)) != std::string::npos) {
         auto constValueIndex = read_vec_u2(bytes, cursor);
-        return ConstValueRuntimeAnnotationValue(tag, constValueIndex);
+        auto constItem = constantsPool.at(constValueIndex-1);
+        const_value_t constValue;
+
+        // Shorts
+        if (std::string("BCFISZ").find(static_cast<char>(tag)) != std::string::npos) {
+            auto shortBytes = constItem.expectShortInfo().bytes;
+            // Reinterpret cast doesn't let me do this, but it's correct in this _one_ case :d
+            if (tag == 'F') constValue = *((float *)(&shortBytes));
+            else constValue = reinterpret_cast<uint32_t>(shortBytes);
+        }
+        // Longs
+        else if (std::string("DJ").find(static_cast<char>(tag)) != std::string::npos) {
+            auto longInfo = constItem.expectLongInfo();
+            uint64_t lng = longInfo.low_bytes | (static_cast<uint64_t>(longInfo.high_bytes) << 32);
+            if (tag == 'D') constValue = *((double *)(&lng));
+            else constValue = reinterpret_cast<uint64_t>(lng);
+        }
+        // String
+        else if (tag == 's') {
+            constValue = std::string(constItem.expectUtf8Info().bytes);
+        }
+
+        return ConstValueRuntimeAnnotationValue(tag, constValue);
     }
     else if (tag == 'e') {
         auto typeNameIndex = read_vec_u2(bytes, cursor);
@@ -270,7 +327,7 @@ runtime_annotation_value_t readElementValue(std::vector<u1> bytes, size_t &curso
     }
 }
 
-RuntimeAnnotation readRuntimeAnnotation(std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool, size_t &cursor) {
+RuntimeAnnotation readRuntimeAnnotation(const std::vector<u1>& bytes, std::vector<ConstantInfo> &constantsPool, size_t &cursor) {
     auto typeIndex = read_vec_u2(bytes, cursor);
     auto numPairs = read_vec_u2(bytes, cursor);
     std::vector<RuntimeAnnotationsKeyValuePair> pairs;
@@ -281,12 +338,15 @@ RuntimeAnnotation readRuntimeAnnotation(std::vector<u1> bytes, std::vector<Const
         pairs.emplace_back(RuntimeAnnotationsKeyValuePair(elementName, elementValue));
     }
 
-    auto type = std::string(constantsPool.at(typeIndex).expectUtf8Info().bytes);
-    return RuntimeAnnotation(type, pairs);
+    auto type = std::string(constantsPool.at(typeIndex-1).expectUtf8Info().bytes);
+    return {type, pairs};
 }
 
-attribute_t makeRuntimeVisibleAnnotationsAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
+attribute_t makeRuntimeVisibleAnnotationsAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
     size_t cursor = 0;
+    if (bytes.empty())
+        return RuntimeVisibleAnnotationsAttribute(name, std::vector<RuntimeAnnotation>());
+
     auto numAnnotations = read_vec_u2(bytes, cursor);
     std::vector<RuntimeAnnotation> annotations;
     for (int i = 0; i < numAnnotations; ++i)
@@ -295,22 +355,92 @@ attribute_t makeRuntimeVisibleAnnotationsAttribute(std::string name, std::vector
     return RuntimeVisibleAnnotationsAttribute(name, annotations);
 }
 
-// attribute_t makeRuntimeInvisibleAnnotationsAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
 
-// attribute_t makeRuntimeVisibleParameterAnnotationsAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeRuntimeInvisibleAnnotationsAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeRuntimeInvisibleParameterAnnotationsAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeRuntimeVisibleParameterAnnotationsAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeAnnotationDefaultAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeRuntimeInvisibleParameterAnnotationsAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
 
-// attribute_t makeBootstrapMethodsAttribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool) {
-//    return Attribute("TEST");
-//}
+attribute_t makeAnnotationDefaultAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
+
+attribute_t makeBootstrapMethodsAttribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool) {
+    return Attribute("UNIMPLMENTED");
+}
+Attribute::Attribute(std::string name) : m_name(std::move(name)) {}
+
+ConstantValueAttribute::ConstantValueAttribute(std::string name) : Attribute(std::move(name)) {
+    m_constant = nullptr;
+}
+
+// ConstantValue typed attributes
+#define o(N, T) ConstantValueAttribute##N::ConstantValueAttribute##N(std::string name, T constant): ConstantValueAttribute(std::move(name)) { m_constant = constant; }
+o(Long, uint64_t)
+o(Float, float)
+o(Double, double)
+o(Integer, uint32_t)
+#undef o
+ConstantValueAttributeString::ConstantValueAttributeString(std::string name, std::string constant): ConstantValueAttribute(std::move(name)), m_constant(std::move(constant))  {}
+// End: ConstantValue typed attributes
+
+VerificationTypeInfoObject::VerificationTypeInfoObject(std::string className) { m_className = std::move(className); }
+VerificationTypeInfoUninitializedVariable::VerificationTypeInfoUninitializedVariable(u2 offset) { m_offset = offset; }
+StackMapFrame::StackMapFrame(u1 type) { m_type = type; }
+StackMapFrameExtended::StackMapFrameExtended(u1 type, u2 offsetDelta) : StackMapFrame(type) { m_offsetDelta = offsetDelta; }
+StackMapFrameSame::StackMapFrameSame(u1 type) : StackMapFrame(type) {}
+StackMapFrameSameLocals::StackMapFrameSameLocals(u1 type, std::vector<verification_type_info_t> stack) : StackMapFrame(type) { m_stack = std::move(stack); }
+StackMapFrameSameLocalsExtended::StackMapFrameSameLocalsExtended(u1 type, u2 offset, std::vector<verification_type_info_t> stack) : StackMapFrameExtended(type, offset) { m_stack = std::move(stack); }
+StackMapFrameChop::StackMapFrameChop(u1 type, u2 offsetDelta) : StackMapFrameExtended(type, offsetDelta) {}
+StackMapFrameAppend::StackMapFrameAppend(u1 type, u2 offsetDelta, std::vector<verification_type_info_t> locals) : StackMapFrameExtended(type,offsetDelta) { m_locals = std::move(locals); }
+StackMapFrameFull::StackMapFrameFull(u1 type, u2 offsetDelta, std::vector<verification_type_info_t> locals, std::vector<verification_type_info_t> stack) : StackMapFrameExtended(type, offsetDelta) {
+    m_locals = std::move(locals);
+    m_stack = std::move(stack);
+}
+StackMapTableAttribute::StackMapTableAttribute(std::string name, std::vector<stack_map_frame_t> entries) : Attribute(std::move(name)) { m_entries = std::move(entries); }
+SourceFileAttribute::SourceFileAttribute(std::string name, std::string sourceFileName) : Attribute(std::move(name)) { m_sourceFileName = std::move(sourceFileName); }
+LineNumberEntry::LineNumberEntry(u2 startPc, u2 lineNumber) {
+    m_startPc = startPc;
+    m_lineNumber = lineNumber;
+}
+LineNumberTableAttribute::LineNumberTableAttribute(std::string name, std::vector<LineNumberEntry> table) : Attribute(std::move(name)) {
+    m_lineNumberTable = std::move(table);
+}
+DeprecatedAttribute::DeprecatedAttribute(std::string name) : Attribute(std::move(name)) {}
+RuntimeAnnotationValue::RuntimeAnnotationValue(u1 tag) { m_tag = tag; }
+ConstValueRuntimeAnnotationValue::ConstValueRuntimeAnnotationValue(u1 tag, const_value_t constValue) : RuntimeAnnotationValue(tag) { m_constValue = std::move(constValue); }
+EnumConstValue::EnumConstValue(std::string typeName, std::string constName) {
+    m_typeName = std::move(typeName);
+    m_constName = std::move(constName);
+}
+EnumConstValueRuntimeAnnotationValue::EnumConstValueRuntimeAnnotationValue(u1 tag, std::string typeName, std::string constName) : RuntimeAnnotationValue(tag), m_enumConstValue(std::move(typeName), std::move(constName)) {}
+ClassInfoRuntimeAnnotationValue::ClassInfoRuntimeAnnotationValue(u1 tag, FieldDescriptor returnDescriptor) : RuntimeAnnotationValue(tag) {
+    m_returnDescriptor = std::move(returnDescriptor);
+}
+ArrayValueRuntimeAnnotationValue::ArrayValueRuntimeAnnotationValue(u1 tag, std::vector<runtime_annotation_value_t> values) : RuntimeAnnotationValue(tag) {
+    m_values = std::move(values);
+}
+RuntimeAnnotationsKeyValuePair::RuntimeAnnotationsKeyValuePair(std::string elementName, const runtime_annotation_value_t& value) : m_value(value) {
+    m_elementName = std::move(elementName);
+    m_value = value;
+}
+RuntimeAnnotation::RuntimeAnnotation(std::string type, std::vector<RuntimeAnnotationsKeyValuePair> elements) : m_annotationElements(std::move(elements)), m_type() {
+    auto descriptor = parse_descriptor(std::move(type));
+    m_type = FieldDescriptor(descriptor);
+}
+RuntimeVisibleAnnotationsAttribute::RuntimeVisibleAnnotationsAttribute(std::string name, std::vector<RuntimeAnnotation> annotations) : Attribute(std::move(name)), m_runtimeVisibleAnnotations(std::move(annotations)) {}
+CodeAttribute::CodeAttribute(std::string name, u2 maxStack, u2 maxLocals, std::vector<u1> code, std::vector<ExceptionTableEntry> exceptionTable, std::vector<attribute_t> attributes) : Attribute(std::move(name)) {
+    m_maxStack = maxStack;
+    m_maxLocals = maxLocals;
+    m_code = std::move(code);
+    m_exceptionTable = std::move(exceptionTable);
+    m_attributes = std::move(attributes);
+}
+#pragma clang diagnostic pop

@@ -13,32 +13,32 @@ class AccessFlags {
 private:
     u2 m_inner;
 public:
-    AccessFlags(u2 inner) { m_inner = inner; }
+    explicit AccessFlags(u2 inner);
 
-    std::vector<std::string>name();
-    std::vector<std::string>description();
-    const bool isPublic() {
+    [[nodiscard]] std::vector<std::string>name() const;
+    [[nodiscard]] std::vector<std::string>description() const;
+    [[nodiscard]] bool isPublic() const {
         return (m_inner & 0x0001) != 0;
     }
-    const bool isFinal() {
+    [[nodiscard]] bool isFinal() const {
         return (m_inner & 0x0010) != 0;
     }
-    const bool isSuper() {
+    [[nodiscard]] bool isSuper() const {
         return (m_inner & 0x0020) != 0;
     }
-    const bool isInterface() {
+    [[nodiscard]] bool isInterface() const {
         return (m_inner & 0x0200) != 0;
     }
-    const bool isAbstract() {
+    [[nodiscard]] bool isAbstract() const {
         return (m_inner & 0x0400) != 0;
     }
-    const bool isSynthetic() {
+    [[nodiscard]] bool isSynthetic() const {
         return (m_inner & 0x1000) != 0;
     }
-    const bool isAnnotation() {
+    [[nodiscard]] bool isAnnotation() const {
         return (m_inner & 0x2000) != 0;
     }
-    const bool isEnum() {
+    [[nodiscard]] bool isEnum() const {
         return (m_inner & 0x4000) != 0;
     }
 };

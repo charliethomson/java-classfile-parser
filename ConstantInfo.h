@@ -14,23 +14,12 @@ private:
     cp_info_info m_inner;
 public:
     std::string m_type;
-    explicit ConstantInfo(cp_info_info inner, std::string type) {
-        m_inner = inner;
-        m_type = std::move(type);
-    }
+    explicit ConstantInfo(cp_info_info inner, std::string type);
 
 #define o(A,B)                                                         \
-cp_info_##A expect##B() {                                              \
-    return std::get<cp_info_##A>(m_inner);                             \
-};                                                                     \
-bool is##B() {                                                         \
-    return std::holds_alternative<cp_info_##A>(m_inner);               \
-};                                                                     \
-std::optional<cp_info_##A> maybe##B() {                                \
-    auto v = std::get_if<cp_info_##A>(&m_inner);                       \
-    return v ? std::optional(*v) : std::nullopt;                       \
-};
-
+cp_info_##A expect##B();                                               \
+bool is##B();                                                          \
+std::optional<cp_info_##A> maybe##B();
     o(class_info,          ClassInfo)
     o(string_info,         StringInfo)
     o(short_info,          ShortInfo)

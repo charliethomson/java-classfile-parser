@@ -12,6 +12,7 @@
 #include <fstream>
 #include <algorithm>
 #include <variant>
+#include <sstream>
 
 template <class T>
 void swap_endian(T *t);
@@ -45,7 +46,6 @@ struct cp_info_method_type_info { u2 descriptor_index; };
 struct cp_info_invoke_dynamic_info { u2 bootstrap_method_attr_index; u2 name_and_type_index; };
 struct cp_info_ref_info { u2 class_index; u2 name_and_type_index; };
 
-
 #define o1(T, AT1, AN1) T make_##T(AT1 AN1);
 #define o2(T, AT1, AN1, AT2, AN2) T make_##T(AT1 AN1, AT2 AN2);
 o1(cp_info_class_info, u2, name_index)
@@ -60,6 +60,7 @@ o2(cp_info_invoke_dynamic_info, u2, bootstrap_method_attr_index, u2, name_and_ty
 o2(cp_info_ref_info, u2, class_index, u2, name_and_type_index)
 #undef o1
 #undef o2
+
 
 typedef std::variant<cp_info_class_info,
         cp_info_string_info,
@@ -79,6 +80,12 @@ struct cp_info {
 cp_info make_cp_info(u1 tag, const char *tag_description, cp_info_info info);
 cp_info parse_cp_info(std::ifstream &file);
 
+
+std::string dump_cp_info_name(cp_info &info);
+
+std::string dump_cp_info_args(cp_info &info);
+
+std::string dump_cp_info(cp_info info);
 struct attribute_info {
     u2 attribute_name_index;
     std::vector<u1> info;

@@ -10,6 +10,8 @@
 #include "Attribute.h"
 #include "FieldDescriptor.h"
 
+#include <utility>
+#include <utility>
 #include <vector>
 #include <string>
 #include <optional>
@@ -27,9 +29,7 @@ public:
     FieldDescriptor m_descriptor;
     std::vector<attribute_t> m_attributes;
 
-    Field(u2 flags, std::string name, descriptor *desc, std::vector<attribute_t> attributes) : m_flags(flags), m_descriptor(desc), m_attributes(attributes) {
-        m_name = name;
-    }
+    Field(u2 flags, std::string name, descriptor *desc, std::vector<attribute_t> attributes);
 
 };
 class MethodDescriptor {
@@ -37,29 +37,7 @@ public:
     std::string m_raw;
     std::vector<FieldDescriptor> m_paramDescriptors;
     FieldDescriptor m_returnDescriptor;
-
-    MethodDescriptor(std::string raw): m_paramDescriptors() {
-        m_raw = raw;
-
-        auto firstChar = raw.at(0);
-        if (!firstChar == '(') {
-            std::cerr << "Failed to parse MethodDescriptor: " << raw << " is not a valid method descriptor (missing opening parenthesis" << std::endl;
-            throw std::exception();
-        }
-
-        size_t paramsEnd = raw.find_last_of(')');
-        auto paramDescriptors = std::string(raw.begin() + 1, raw.begin() + paramsEnd);
-
-        auto paramOffset = 0;
-        while (paramOffset < paramDescriptors.size()) {
-            auto descriptor = parse_descriptor(std::move(paramDescriptors.substr(paramOffset)));
-            paramOffset += descriptor->offset;
-            m_paramDescriptors.emplace_back(FieldDescriptor(descriptor));
-        }
-
-        auto returnDescriptor = parse_descriptor(std::move(raw.substr(paramsEnd+1)));
-        m_returnDescriptor = FieldDescriptor(returnDescriptor);
-    }
+    explicit MethodDescriptor(std::string raw);
 };
 class Method {
 public:
@@ -67,72 +45,20 @@ public:
     std::string m_name;
     MethodDescriptor m_descriptor;
     std::vector<attribute_t> m_attributes;
-
-    Method(u2 flags, std::string name, std::string descriptor, std::vector<attribute_t> attributes) : m_flags(flags), m_descriptor(descriptor), m_attributes(attributes) {
-        m_name = name;
-    }
+    Method(u2 flags, std::string name, std::string descriptor, std::vector<attribute_t> attributes);
 };
 class JavaClass {
 private:
     std::vector<ConstantInfo> m_constantsPool;
-
-    ConstantInfo getConstant(size_t index) {
-        return m_constantsPool.at(index-1);
-    }
-
-    std::string getClassInfoString(size_t classInfoIndex) {
-        auto classInfo = getConstant(classInfoIndex).expectClassInfo();
-        return getUtf8String(classInfo.name_index);
-    }
-    std::string getUtf8String(size_t utf8Index) {
-        return std::string(getConstant(utf8Index).expectUtf8Info().bytes);
-    }
-
-    std::vector<std::string> populateInterfaces(std::vector<u2> indices) {
-        std::vector<std::string> interfaces;
-        for (u2 index : indices)
-            interfaces.emplace_back(getClassInfoString(index));
-        return interfaces;
-    }
-
-    std::vector<attribute_t> populateAttributes(std::vector<attribute_info> attrs) {
-        std::vector<attribute_t> attributes;
-        for (auto attr : attrs) {
-            auto name = getUtf8String(attr.attribute_name_index);
-            auto attribute = make_attribute(name, attr.info, m_constantsPool);
-            auto isCode = isCodeAttribute(name);
-            attributes.emplace_back(attribute);
-        }
-        return attributes;
-    }
-
-    std::vector<Field> populateFields(std::vector<field_info> info) {
-        std::vector<Field> fields;
-        for (auto fieldInfo : info) {
-            auto name = getUtf8String(fieldInfo.name_index);
-            auto descriptor = parse_descriptor(getUtf8String(fieldInfo.descriptor_index));
-            auto attributes = populateAttributes(fieldInfo.attributes);
-
-            fields.emplace_back(Field(fieldInfo.access_flags, name, descriptor, attributes));
-        }
-        return fields;
-    }
-
-    std::vector<Method> populateMethods(std::vector<method_info> info) {
-        std::vector<Method> methods;
-
-        for (auto methodInfo : info) {
-            auto name = getUtf8String(methodInfo.name_index);
-            auto descriptor = getUtf8String(methodInfo.descriptor_index);
-            auto attributes = populateAttributes(methodInfo.attributes);
-
-            methods.emplace_back(Method(methodInfo.access_flags, name, descriptor, attributes));
-        }
-
-        return methods;
-    }
+    ConstantInfo getConstant(size_t index);
+    std::string getClassInfoString(size_t classInfoIndex);
+    std::string getUtf8String(size_t utf8Index);
+    std::vector<std::string> populateInterfaces(const std::vector<u2>& indices);
+    std::vector<attribute_t> populateAttributes(const std::vector<attribute_info>& attrs);
+    std::vector<Field> populateFields(const std::vector<field_info>& info);
+    std::vector<Method> populateMethods(const std::vector<method_info>& info);
 public:
-    java_version m_version;
+    java_version m_version{};
     AccessFlags m_flags;
     std::string m_thisClass;
     std::optional<std::string> m_superClass;
@@ -141,9 +67,7 @@ public:
     std::vector<Method> m_methods;
     std::vector<attribute_t> m_attributes;
 
-    JavaClass(ClassFileParser parser);
-    JavaClass(const char * filePath);
-
+    explicit JavaClass(const ClassFileParser& parser);
     ~JavaClass();
 };
 

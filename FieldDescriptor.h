@@ -24,6 +24,6 @@ public:
     std::string m_type;
     std::optional<FieldDescriptor *> m_inner;
     FieldDescriptor();
-    FieldDescriptor(descriptor *desc);
+    explicit FieldDescriptor(descriptor *desc);
 };
 #endif //SPEED_FIELDDESCRIPTOR_H

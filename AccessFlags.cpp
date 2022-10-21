@@ -6,7 +6,7 @@
 #include <vector>
 #include <string>
 
-std::vector<std::string>AccessFlags::description() {
+std::vector<std::string>AccessFlags::description() const {
     std::vector<std::string> descriptions;
     if (isPublic()) descriptions.emplace_back("Declared public; may be accessed from outside its package.");
     if (isFinal()) descriptions.emplace_back("Declared final; no subclasses allowed.");
@@ -18,7 +18,7 @@ std::vector<std::string>AccessFlags::description() {
     if (isEnum()) descriptions.emplace_back("Declared as an enum type.");
     return descriptions;
 }
-std::vector<std::string> AccessFlags::name() {
+std::vector<std::string> AccessFlags::name() const {
     std::vector<std::string> names;
     if (isPublic()) names.emplace_back("ACC_PUBLIC");
     if (isFinal()) names.emplace_back("ACC_FINAL");
@@ -30,3 +30,5 @@ std::vector<std::string> AccessFlags::name() {
     if (isEnum()) names.emplace_back("ACC_ENUM");
     return names;
 }
+
+AccessFlags::AccessFlags(u2 inner) { m_inner = inner; }

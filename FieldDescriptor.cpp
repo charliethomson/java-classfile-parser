@@ -1,3 +1,6 @@
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "misc-no-recursion"
+#pragma ide diagnostic ignored "cppcoreguidelines-narrowing-conversions"
 //
 // Created by charlie.thomson on 10/21/2022.
 //
@@ -8,8 +11,6 @@ descriptor *parse_descriptor(std::string raw) {
     size_t offset = 0;
     if (raw.starts_with('(')) offset++;
     auto start = raw.begin() + offset;
-    auto end = raw.begin() + offset + 1;
-    if (end >= raw.end()) end = raw.end();
     switch (raw.at(offset))
     {
 #define o(C, T) case C: \
@@ -82,3 +83,4 @@ FieldDescriptor::FieldDescriptor(descriptor *desc) {
         m_inner = std::optional(inner);
     }
 }
+#pragma clang diagnostic pop

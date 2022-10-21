@@ -4,7 +4,6 @@
 #include <vector>
 #include <iostream>
 #include <string>
-#include <fstream>
 #include <algorithm>
 #include <variant>
 
@@ -47,8 +46,12 @@ std::vector<T> read_array(std::ifstream &file, std::function<T(std::ifstream &fi
 
     std::vector<T> items;
     for (size_t i = 0; i < count-offset; ++i) {
-        auto item = parser(file);
-        items.emplace_back(item);
+        try {
+            auto item = parser(file);
+            items.emplace_back(item);
+        } catch (const std::exception &e) {
+            break;
+        }
     }
     return items;
 }
@@ -104,7 +107,6 @@ cp_info parse_cp_info(std::ifstream &file) {
             name_and_type_index = read_u2(file);
             return make_cp_info(tag, "CONSTANT_Fieldref",make_cp_info_ref_info(class_index, name_and_type_index));
         case 10:
-
             class_index = read_u2(file);
             name_and_type_index = read_u2(file);
             return make_cp_info(tag, "CONSTANT_Methodref",make_cp_info_ref_info(class_index, name_and_type_index));
@@ -152,6 +154,7 @@ cp_info parse_cp_info(std::ifstream &file) {
             return make_cp_info(tag, "CONSTANT_InvokeDynamic", make_cp_info_invoke_dynamic_info(bootstrap_method_attr_index, name_and_type_index));
         default:
             std::cerr << "Unknown tag: " << static_cast<int>(tag) << std::endl;
+            file.unget();
             throw std::exception();
     }
 }
@@ -194,6 +197,46 @@ method_info parse_method(std::ifstream &file) {
     };
 }
 
+
+std::string dump_cp_info_name(cp_info &info) {
+auto s = std::string(info.tag_description);
+auto offset = s.find('_');
+return s.substr(offset);
+}
+std::string dump_cp_info_args(cp_info &info) {
+#define o(T,A) if (holds_alternative<T>(info.info)) { \
+    auto i = get<T>(info.info);                         \
+    auto ss = std::stringstream();                      \
+    A;                                                  \
+    return ss.str();                                    \
+}
+#define o1(T, N) o(T, ss << #N << "=" << i.N;)
+#define o2(T, N1, N2) o(T, ss << #N1 << "=" << i.N1 << ",\t" << #N2 << "=" << i.N2;)
+o1(cp_info_class_info, name_index)
+o1(cp_info_string_info, string_index)
+o1(cp_info_short_info, bytes)
+o1(cp_info_method_type_info, descriptor_index)
+o2(cp_info_ref_info, class_index, name_and_type_index)
+o2(cp_info_long_info, low_bytes, high_bytes)
+o2(cp_info_name_and_type_info, name_index, descriptor_index)
+o2(cp_info_utf8_info, length, bytes)
+o2(cp_info_method_handle_info, reference_kind, reference_index)
+o2(cp_info_invoke_dynamic_info, bootstrap_method_attr_index, name_and_type_index)
+#undef o
+#undef o1
+#undef o2
+return "UNKNOWN";
+}
+
+std::string dump_cp_info(cp_info info) {
+std::string typestr = dump_cp_info_name(info);
+std::string argsstr = dump_cp_info_args(info);
+
+auto ss = std::stringstream();
+ss << typestr << "\t" << argsstr << std::endl;
+return ss.str();
+}
+
 ClassFileParser::ClassFileParser(const char *filePath) {
     std::ifstream file(filePath, std::ios::binary);
     if (file.fail()) {
@@ -210,7 +253,10 @@ ClassFileParser::ClassFileParser(const char *filePath) {
     o(minor, u2)
     o(major, u2)
     constant_pool = read_array<cp_info>(file, parse_cp_info, 1);
-    std::cout << "Got " << constant_pool.size() << " constants" << std::endl;
+    std::cout << "Got " << constant_pool.size() << " constants: " << std::endl;
+    for (int i = 0; i < constant_pool.size(); ++i) {
+        std::cout << "\t#" << i << dump_cp_info(constant_pool.at(i));
+    }
     o(access_flags, u2)
     o(this_class, u2)
     o(super_class, u2)

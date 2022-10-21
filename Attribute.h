@@ -17,19 +17,18 @@
 #include <cstdint>
 #include <variant>
 
+
 class Attribute {
 public:
     std::string m_name;
-    Attribute(std::string name) : m_name(name) {}
+    explicit Attribute(std::string name);
 };
 class ConstantValueAttribute : public Attribute {
 private:
     static const uint8_t ConstantValueType = 0;
     void *m_constant;
 public:
-    ConstantValueAttribute(std::string name) : Attribute(name) {
-        m_constant = NULL;
-    }
+    explicit ConstantValueAttribute(std::string name);
 };
 // ConstantValue typed attributes
 #define o(N, T, F) class ConstantValueAttribute##N : ConstantValueAttribute {                \
@@ -37,9 +36,7 @@ private:                                                                        
     static const uint8_t ConstantValueType = F;                                              \
 public:                                                                                      \
     T m_constant;                                                                            \
-    ConstantValueAttribute##N(std::string name, T constant) : ConstantValueAttribute(name) { \
-        m_constant = constant;                                                               \
-    }                                                                                        \
+    ConstantValueAttribute##N(std::string name, T constant);                                 \
 };
 o(Long, uint64_t, 1)
 o(String, std::string, 2)
@@ -80,13 +77,13 @@ class VerificationTypeInfoObject : VerificationTypeInfo {
 public:
     static u1 Tag() { return 7; }
     std::string m_className;
-    VerificationTypeInfoObject(std::string className) { m_className = className; }
+    explicit VerificationTypeInfoObject(std::string className);
 };
 class VerificationTypeInfoUninitializedVariable : VerificationTypeInfo {
 public:
     static u1 Tag() { return 8; }
     u2 m_offset;
-    VerificationTypeInfoUninitializedVariable(u2 offset) { m_offset = offset; }
+    explicit VerificationTypeInfoUninitializedVariable(u2 offset);
 };
 typedef std::variant<
         VerificationTypeInfoObject,
@@ -102,45 +99,42 @@ typedef std::variant<
 class StackMapFrame {
 public:
     u1 m_type;
-    StackMapFrame(u1 type) { m_type = type; };
+    explicit StackMapFrame(u1 type);;
 };
 class StackMapFrameExtended : StackMapFrame {
 public:
     u2 m_offsetDelta;
-    StackMapFrameExtended(u1 type, u2 offsetDelta) : StackMapFrame(type) { m_offsetDelta = offsetDelta; }
+    StackMapFrameExtended(u1 type, u2 offsetDelta);
 };
 class StackMapFrameSame : StackMapFrame {
 public:
-    StackMapFrameSame(u1 type) : StackMapFrame(type) {}
+    explicit StackMapFrameSame(u1 type);
 };
 class StackMapFrameSameExtended : StackMapFrameExtended {};
 class StackMapFrameSameLocals : StackMapFrame {
 public:
     std::vector<verification_type_info_t> m_stack;
-    StackMapFrameSameLocals(u1 type, std::vector<verification_type_info_t> stack) : StackMapFrame(type) { m_stack = stack; }
+    StackMapFrameSameLocals(u1 type, std::vector<verification_type_info_t> stack);
 };
 class StackMapFrameSameLocalsExtended : StackMapFrameExtended {
 public:
     std::vector<verification_type_info_t> m_stack;
-    StackMapFrameSameLocalsExtended(u1 type, u2 offset, std::vector<verification_type_info_t> stack) : StackMapFrameExtended(type, offset) { m_stack = stack; }
+    StackMapFrameSameLocalsExtended(u1 type, u2 offset, std::vector<verification_type_info_t> stack);
 };
 class StackMapFrameChop : StackMapFrameExtended {
 public:
-    StackMapFrameChop(u1 type, u2 offsetDelta) : StackMapFrameExtended(type, offsetDelta) {}
+    StackMapFrameChop(u1 type, u2 offsetDelta);
 };
 class StackMapFrameAppend : StackMapFrameExtended {
 public:
     std::vector<verification_type_info_t> m_locals;
-    StackMapFrameAppend(u1 type, u2 offsetDelta, std::vector<verification_type_info_t> locals) : StackMapFrameExtended(type,offsetDelta) { m_locals = locals; }
+    StackMapFrameAppend(u1 type, u2 offsetDelta, std::vector<verification_type_info_t> locals);
 };
 class StackMapFrameFull : StackMapFrameExtended {
 public:
     std::vector<verification_type_info_t> m_locals;
     std::vector<verification_type_info_t> m_stack;
-    StackMapFrameFull(u1 type, u2 offsetDelta, std::vector<verification_type_info_t> locals, std::vector<verification_type_info_t> stack) : StackMapFrameExtended(type, offsetDelta) {
-        m_locals = locals;
-        m_stack = stack;
-    }
+    StackMapFrameFull(u1 type, u2 offsetDelta, std::vector<verification_type_info_t> locals, std::vector<verification_type_info_t> stack);
 };
 typedef std::variant<
         StackMapFrameExtended,
@@ -155,7 +149,7 @@ typedef std::variant<
 class StackMapTableAttribute : public Attribute {
 public:
     std::vector<stack_map_frame_t> m_entries;
-    StackMapTableAttribute(std::string name, std::vector<stack_map_frame_t> entries) : Attribute(name) { m_entries = entries; }
+    StackMapTableAttribute(std::string name, std::vector<stack_map_frame_t> entries);
 };
 
 class ExceptionsAttribute : public Attribute {
@@ -186,7 +180,7 @@ class SignatureAttribute : public Attribute {
 class SourceFileAttribute : public Attribute {
 public:
     std::string m_sourceFileName;
-    SourceFileAttribute(std::string name, std::string sourceFileName) : Attribute(name) { m_sourceFileName = sourceFileName; }
+    SourceFileAttribute(std::string name, std::string sourceFileName);
 };
 class SourceDebugExtensionAttribute : public Attribute {
     std::string m_debugExtensions;
@@ -196,17 +190,12 @@ class LineNumberEntry {
 public:
     u2 m_startPc;
     u2 m_lineNumber;
-    LineNumberEntry(u2 startPc, u2 lineNumber) {
-        m_startPc = startPc;
-        m_lineNumber = lineNumber;
-    }
+    LineNumberEntry(u2 startPc, u2 lineNumber);
 };
 class LineNumberTableAttribute : public Attribute {
 public:
     std::vector<LineNumberEntry> m_lineNumberTable;
-    LineNumberTableAttribute(std::string name, std::vector<LineNumberEntry> table) : Attribute(name) {
-        m_lineNumberTable = table;
-    }
+    LineNumberTableAttribute(std::string name, std::vector<LineNumberEntry> table);
 };
 
 class BytecodeSpan { u2 m_start; u2 m_length; u2 m_end; };
@@ -219,7 +208,7 @@ class LocalVariableEntry {
 };
 
 class LocalVariableTableAttribute : public Attribute {
-    std::vector<LocalVariableEntry> m_localVairableTable;
+    std::vector<LocalVariableEntry> m_localVariableTable;
 };
 
 class LocalVariableTypeEntry {
@@ -229,46 +218,42 @@ class LocalVariableTypeEntry {
     u2 m_index;
 };
 class LocalVariableTypeTableAttribute : public Attribute {
-    std::vector<LocalVariableTypeEntry> m_localVairableTypeTable;
+    std::vector<LocalVariableTypeEntry> m_localVariableTypeTable;
 };
 
 class DeprecatedAttribute : public Attribute {
 public:
-    DeprecatedAttribute(std::string name) : Attribute(name) {}
+    explicit DeprecatedAttribute(std::string name);
 };
 
 
 class RuntimeAnnotationValue {
 public:
     u1 m_tag;
-    RuntimeAnnotationValue(u1 tag) { m_tag = tag; }
+    explicit RuntimeAnnotationValue(u1 tag);
 };
+typedef std::variant<uint32_t, uint64_t, float, double, std::string> const_value_t;
+
 class ConstValueRuntimeAnnotationValue : RuntimeAnnotationValue {
 public:
-    u2 m_constValueIndex;
-    ConstValueRuntimeAnnotationValue(u1 tag, u2 constValueIndex) : RuntimeAnnotationValue(tag) { m_constValueIndex = constValueIndex; }
+    const_value_t m_constValue;
+    ConstValueRuntimeAnnotationValue(u1 tag, const_value_t constValue);
 };
 class EnumConstValue {
 public:
     std::string m_typeName;
     std::string m_constName;
-    EnumConstValue(std::string typeName, std::string constName) {
-        m_typeName = typeName;
-        m_constName = constName;
-    }
+    EnumConstValue(std::string typeName, std::string constName);
 };
 class EnumConstValueRuntimeAnnotationValue : RuntimeAnnotationValue {
 public:
     EnumConstValue m_enumConstValue;
-    EnumConstValueRuntimeAnnotationValue(u1 tag, std::string typeName, std::string constName) : RuntimeAnnotationValue(tag),
-                                                                                  m_enumConstValue(typeName, constName) {}
+    EnumConstValueRuntimeAnnotationValue(u1 tag, std::string typeName, std::string constName);
 };
 class ClassInfoRuntimeAnnotationValue : RuntimeAnnotationValue {
 public:
     FieldDescriptor m_returnDescriptor;
-    ClassInfoRuntimeAnnotationValue(u1 tag, FieldDescriptor returnDescriptor) : RuntimeAnnotationValue(tag) {
-        m_returnDescriptor = returnDescriptor;
-    }
+    ClassInfoRuntimeAnnotationValue(u1 tag, FieldDescriptor returnDescriptor);
 };
 class RecursiveRuntimeAnnotationValue : RuntimeAnnotationValue {
 public:
@@ -283,9 +268,7 @@ public:
             EnumConstValueRuntimeAnnotationValue,
             ArrayValueRuntimeAnnotationValue> runtime_annotation_value_t;
     std::vector<runtime_annotation_value_t> m_values;
-    ArrayValueRuntimeAnnotationValue(u1 tag, std::vector<runtime_annotation_value_t> values) : RuntimeAnnotationValue(tag) {
-        m_values = values;
-    }
+    ArrayValueRuntimeAnnotationValue(u1 tag, std::vector<runtime_annotation_value_t> values);
 };
 
 typedef std::variant<
@@ -299,24 +282,18 @@ class RuntimeAnnotationsKeyValuePair {
 public:
     std::string m_elementName;
     runtime_annotation_value_t m_value;
-    RuntimeAnnotationsKeyValuePair(std::string elementName, runtime_annotation_value_t value) : m_value(value) {
-        m_elementName = elementName;
-        m_value = value;
-    }
+    RuntimeAnnotationsKeyValuePair(std::string elementName, const runtime_annotation_value_t& value);
 };
 class RuntimeAnnotation {
 public:
-    std::string m_type;
+    FieldDescriptor m_type;
     std::vector<RuntimeAnnotationsKeyValuePair> m_annotationElements;
-    RuntimeAnnotation(std::string type, std::vector<RuntimeAnnotationsKeyValuePair> elements) : m_annotationElements(elements) {
-        m_type = type;
-    }
+    RuntimeAnnotation(std::string type, std::vector<RuntimeAnnotationsKeyValuePair> elements);
 };
 class RuntimeVisibleAnnotationsAttribute : public Attribute {
 public:
     std::vector<RuntimeAnnotation> m_runtimeVisibleAnnotations;
-    RuntimeVisibleAnnotationsAttribute(std::string name, std::vector<RuntimeAnnotation> annotations)
-        : Attribute(name), m_runtimeVisibleAnnotations(annotations) {};
+    RuntimeVisibleAnnotationsAttribute(std::string name, std::vector<RuntimeAnnotation> annotations);;
 };
 class AnnotationValueRuntimeAnnotationValue : RuntimeAnnotationValue {
     RuntimeAnnotation annotation;
@@ -341,11 +318,8 @@ class BootstrapMethodsAttribute : public Attribute {
 class CodeAttribute : Attribute
 {
 public:
-    u2 m_maxStack;
-    u2 m_maxLocals;
-    std::vector<u1> m_code;
-    std::vector<ExceptionTableEntry> m_exceptionTable;
-    std::vector<std::variant<
+
+    typedef std::variant<
             Attribute,
             ConstantValueAttribute,
             CodeAttribute,
@@ -370,7 +344,12 @@ public:
             ConstantValueAttributeString,
             ConstantValueAttributeFloat,
             ConstantValueAttributeDouble,
-            ConstantValueAttributeInteger>> m_attributes;
+            ConstantValueAttributeInteger>  attribute_t;
+    u2 m_maxStack;
+    u2 m_maxLocals;
+    std::vector<u1> m_code;
+    std::vector<ExceptionTableEntry> m_exceptionTable;
+    std::vector<attribute_t> m_attributes;
 
     CodeAttribute(
             std::string name,
@@ -378,39 +357,8 @@ public:
             u2 maxLocals,
             std::vector<u1> code,
             std::vector<ExceptionTableEntry> exceptionTable,
-            std::vector<std::variant<
-                    Attribute,
-                    ConstantValueAttribute,
-                    CodeAttribute,
-                    StackMapTableAttribute,
-                    ExceptionsAttribute,
-                    InnerClassesAttribute,
-                    SyntheticAttribute,
-                    SignatureAttribute,
-                    SourceFileAttribute,
-                    SourceDebugExtensionAttribute,
-                    LineNumberTableAttribute,
-                    LocalVariableTableAttribute,
-                    LocalVariableTypeTableAttribute,
-                    DeprecatedAttribute,
-                    RuntimeVisibleAnnotationsAttribute,
-                    RuntimeInvisibleAnnotationsAttribute,
-                    RuntimeVisibleParameterAnnotationsAttribute,
-                    RuntimeInvisibleParameterAnnotationsAttribute,
-                    AnnotationDefaultAttribute,
-                    BootstrapMethodsAttribute,
-                    ConstantValueAttributeLong,
-                    ConstantValueAttributeString,
-                    ConstantValueAttributeFloat,
-                    ConstantValueAttributeDouble,
-                    ConstantValueAttributeInteger>> attributes
-            ) : Attribute(name) {
-        m_maxStack = maxStack;
-        m_maxLocals = maxLocals;
-        m_code = code;
-        m_exceptionTable = exceptionTable;
-        m_attributes = attributes;
-    }
+            std::vector<attribute_t> attributes
+            );
 };
 typedef std::variant<
         Attribute,
@@ -439,11 +387,9 @@ typedef std::variant<
         ConstantValueAttributeDouble,
         ConstantValueAttributeInteger>  attribute_t;
 
-attribute_t make_attribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constants);
-
 #define o(A)                                                           \
 static bool is##A##Attribute(std::string &name) { return name == #A; } \
-attribute_t make##A##Attribute(std::string name, std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool);
+attribute_t make##A##Attribute(const std::string& name, const std::vector<u1> &bytes, std::vector<ConstantInfo> &constantsPool);
 o(ConstantValue)
 o(Code)
 o(StackMapTable)
@@ -467,23 +413,16 @@ o(BootstrapMethods)
 #undef o
 
 template <typename T>
-T read_vec_un(std::vector<u1> bytes, size_t &cursor, size_t n) {
-    T v=0;
-    for (auto i = 0; i < n; ++i) {
-        v <<= 8;
-        v |= bytes.at((cursor) + i);
-    }
-    cursor += n;
-    return v;
-}
-#define o(T,N) static T read_vec_##T(std::vector<u1> bytes, size_t &cursor) { \
-    return read_vec_un<T>(bytes, cursor, N);                                  \
-}
+T read_vec_un(std::vector<u1> bytes, size_t &cursor, size_t n);
+#define o(T,N) static T read_vec_##T(std::vector<u1> bytes, size_t &cursor);
 o(u1, 1)
 o(u2, 2)
 o(u4, 4)
 #undef o
 
-RuntimeAnnotation readRuntimeAnnotation(std::vector<u1> bytes, std::vector<ConstantInfo> &constantsPool, size_t &cursor);
+RuntimeAnnotation readRuntimeAnnotation(const std::vector<u1>& bytes, std::vector<ConstantInfo> &constantsPool, size_t &cursor);
 
 #endif //SPEED_ATTRIBUTE_H
+
+attribute_t make_attribute(std::string name, const std::vector<u1>& bytes, std::vector<ConstantInfo> &constantsPool);
+verification_type_info_t readVerificationType(const std::vector<u1>& bytes, size_t &cursor, std::vector<ConstantInfo> &constantsPool);
